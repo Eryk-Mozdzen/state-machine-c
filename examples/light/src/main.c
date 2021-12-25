@@ -16,18 +16,10 @@
 #define EVENT_ON    0
 #define EVENT_OFF   1
 
-// enter and execute functions for state definitions
+// execute functions for state definitions
 // must returns void and takes void* argument
-void enter_turn_on_state(void *input) {
-    printf("Turn on light\n");
-}
-
 void execute_turn_on_state(void *input) {
     printf("Light is shining\n");
-}
-
-void enter_turn_off_state(void *input) {
-    printf("Turn off light\n");
 }
 
 void execute_turn_off_state(void *input) {
@@ -52,8 +44,8 @@ int main() {
     StateMachine_t state_machine;
 
     // states and events definitions
-    State_t on_state        = {STATE_ON,    &enter_turn_on_state,   &execute_turn_on_state,     NULL};
-    State_t off_state       = {STATE_OFF,   &enter_turn_off_state,  &execute_turn_off_state,    NULL};
+    State_t on_state        = {STATE_ON,    NULL,   &execute_turn_on_state,     NULL};
+    State_t off_state       = {STATE_OFF,   NULL,   &execute_turn_off_state,    NULL};
     Event_t turn_on_event   = {EVENT_ON,    &get_turn_on_event  };
     Event_t turn_off_event  = {EVENT_OFF,   &get_turn_off_event };
 
