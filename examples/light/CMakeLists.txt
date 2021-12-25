@@ -19,4 +19,4 @@ target_link_libraries(${PROJECT_NAME} m)
 # cd build
 # cmake ..
 # make
-# ./ExampleLight
+# ./Light

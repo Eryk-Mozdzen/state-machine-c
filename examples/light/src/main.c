@@ -49,11 +49,11 @@ int main() {
     Event_t turn_off_event  = {EVENT_OFF,   &get_turn_off_event };
 
     // init state machine
-    StateMachine_Init(&state_machine, off_state);
+    StateMachine_Init(&state_machine);
 
     // define states end events
     StateMachine_DefineState(&state_machine, on_state);
-    StateMachine_DefineState(&state_machine, off_state);    // not necessary 
+    StateMachine_DefineState(&state_machine, off_state);
 
     StateMachine_DefineEvent(&state_machine, turn_on_event);
     StateMachine_DefineEvent(&state_machine, turn_off_event);
@@ -61,6 +61,9 @@ int main() {
     // define state transitions
     StateMachine_DefineTransition(&state_machine, STATE_ON, STATE_OFF, EVENT_OFF);  // if is in STATE_ON and EVENT_OFF occurres, change state to STATE_OFF
     StateMachine_DefineTransition(&state_machine, STATE_OFF, STATE_ON, EVENT_ON);   // if is in STATE_OFF and EVENT_ON occurres, change state to STATE_ON
+
+    // begin from initial state
+    StateMachine_Start(&state_machine, STATE_OFF);
 
     do {
 

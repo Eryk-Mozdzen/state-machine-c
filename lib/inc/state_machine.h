@@ -39,13 +39,14 @@ typedef struct {
     uint32_t events_num;
 } StateMachine_t;
 
-void StateMachine_Init(StateMachine_t *, State_t);
+void StateMachine_Init(StateMachine_t *);
 void StateMachine_Deinit(StateMachine_t *);
 
 void StateMachine_DefineState(StateMachine_t *, State_t);
 void StateMachine_DefineEvent(StateMachine_t *, Event_t);
 void StateMachine_DefineTransition(StateMachine_t *, uint32_t, uint32_t, uint32_t);
 
+void StateMachine_Start(StateMachine_t *, uint32_t);
 void StateMachine_Update(StateMachine_t *);
 
 #endif

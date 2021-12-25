@@ -14,7 +14,7 @@ static int32_t __StateMachine_GetEventIndex(StateMachine_t *, uint32_t);
  * @param st pointer to used state machine
  * @param initial initial state
  */
-void StateMachine_Init(StateMachine_t *st, State_t initial) {
+void StateMachine_Init(StateMachine_t *st) {
     // init fields
     st->curr_state_index = __STATE_MACHINE_UNKNOWN_STATE_INDEX;
     st->states_num = 0;
@@ -22,14 +22,6 @@ void StateMachine_Init(StateMachine_t *st, State_t initial) {
     st->states = NULL;
     st->events = NULL;
     st->transitions = NULL;
-
-    // add initial state to database
-    StateMachine_DefineState(st, initial);
-    
-    // set current state
-    st->curr_state_index = 0;
-    if(initial.enter!=NULL)
-        initial.enter();
 }
 
 void StateMachine_Deinit(StateMachine_t *st) {
@@ -98,8 +90,17 @@ void StateMachine_DefineTransition(StateMachine_t *st, uint32_t prev_id, uint32_
     st->transitions[prev_index][event_index] = next_index;
 }
 
-void StateMachine_Update(StateMachine_t *st) {
+void StateMachine_Start(StateMachine_t *st, uint32_t initial_id) {
+    assert(__StateMachine_GetStateIndex(st, initial_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
 
+    st->curr_state_index = __StateMachine_GetStateIndex(st, initial_id);
+
+    // call enter function for initial state
+    if(st->states[st->curr_state_index].enter!=NULL)
+        st->states[st->curr_state_index].enter();
+}
+
+void StateMachine_Update(StateMachine_t *st) {
     // check if any event occurs
     // @todo assume that is only one event per iteration
     int32_t event_index = __STATE_MACHINE_UNKNOWN_EVENT_INDEX;
