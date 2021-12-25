@@ -8,12 +8,16 @@
 #include <stdio.h>
 #include "state_machine.h"
 
+// state and events identifiers
+// it can be any non-negative number 
 #define STATE_ON    0
 #define STATE_OFF   1
 
 #define EVENT_ON    0
 #define EVENT_OFF   1
 
+// enter and execute functions for state definitions
+// must returns void and takes void* argument
 void enter_turn_on_state(void *input) {
     printf("Turn on light\n");
 }
@@ -30,6 +34,8 @@ void execute_turn_off_state(void *input) {
     printf("Light is not shining\n");
 }
 
+// get functions for event definitions
+// must returns uint8_t and takes void* argument
 uint8_t get_turn_on_event(void *input) {
     return *(char *)input=='1';
 }
@@ -40,9 +46,12 @@ uint8_t get_turn_off_event(void *input) {
 
 int main() {
 
+    // place for user input
     char input = 'q';
 
     StateMachine_t state_machine;
+
+    // states and events definitions
     State_t on_state        = {STATE_ON,    &enter_turn_on_state,   &execute_turn_on_state,     NULL};
     State_t off_state       = {STATE_OFF,   &enter_turn_off_state,  &execute_turn_off_state,    NULL};
     Event_t turn_on_event   = {EVENT_ON,    &get_turn_on_event  };
@@ -73,6 +82,7 @@ int main() {
         scanf("%s[^\n]", tmp);
         input = tmp[0];
 
+        // take care for all events, state transitions and state functions
         StateMachine_Update(&state_machine);
 
     } while(input!='x');

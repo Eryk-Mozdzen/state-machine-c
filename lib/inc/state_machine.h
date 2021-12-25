@@ -12,33 +12,45 @@
 #ifndef __STATE_MACHINE_H__
 #define __STATE_MACHINE_H__
 
+/**
+ * @brief this value of index means that state or event does not exist
+ */
 #define __STATE_MACHINE_UNKNOWN_STATE_INDEX   -1
 #define __STATE_MACHINE_UNKNOWN_EVENT_INDEX   -1
 
+/**
+ * @brief state definition data
+ */
 typedef struct {
-    uint32_t id;
+    uint32_t id;                /*< user identifier of specific state, must be uniq */
 
-    void (*enter)(void *);
-    void (*execute)(void *);
-    void (*exit)(void *);
+    void (*enter)(void *);      /*< function called once, at the beginning of the state, after switch from previous one, set NULL if not needed */
+    void (*execute)(void *);    /*< function called every time when the state is used, set NULL if not needed  */
+    void (*exit)(void *);       /*< function called once, at the end of the state, before switch to the next one, set NULL if not needed  */
 } State_t;
 
+/**
+ * @brief event definition data
+ */
 typedef struct {
-    uint32_t id;
+    uint32_t id;                /*< user identifier of specific event, must be uniq */
 
-    uint8_t (*get)(void *);
+    uint8_t (*get)(void *);     /*< function to check if event occurs, must be defined */
 } Event_t;
 
+/**
+ * @brief state machine object structure
+ */
 typedef struct {
-    int32_t curr_state_index;
+    int32_t curr_state_index;   /*< index, current state of the machine */
 
-    State_t *states;
-    Event_t *events;
-    int32_t **transitions;
-    uint32_t states_num;
-    uint32_t events_num;
+    State_t *states;            /*< indexed set of defined states */
+    Event_t *events;            /*< indexed set of defined events */
+    int32_t **transitions;      /*< transition table, rows represents states, columns represents events */
+    uint32_t states_num;        /*< number of defined states */
+    uint32_t events_num;        /*< number of defined events */
 
-    void *buffer;
+    void *buffer;               /*< memory buffer for user data, allocated and deallocated by user, is passed ass argument to all state and event functions */
 } StateMachine_t;
 
 void StateMachine_Init(StateMachine_t *, void *);

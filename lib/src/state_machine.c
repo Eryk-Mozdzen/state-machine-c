@@ -6,12 +6,15 @@
 
 #include "state_machine.h"
 
+/**
+ * @brief functions only for internal use
+ */
 static int32_t __StateMachine_GetStateIndex(StateMachine_t *, uint32_t);
 static int32_t __StateMachine_GetEventIndex(StateMachine_t *, uint32_t);
 
 /**
- * @brief Initialize a new StateMachine object
- * @param st pointer to used state machine
+ * @brief Initialize fields in state machine structure
+ * @param st pointer to state machine
  * @param buffer memory buffer for user data
  */
 void StateMachine_Init(StateMachine_t *st, void *buffer) {
@@ -25,6 +28,10 @@ void StateMachine_Init(StateMachine_t *st, void *buffer) {
     st->buffer = buffer;
 }
 
+/**
+ * @brief Free memory allocated by state machine
+ * @param st pointer to state machine
+ */
 void StateMachine_Deinit(StateMachine_t *st) {
     // deallocate all memory
     for(uint32_t i=0; i<st->states_num; i++)
@@ -42,6 +49,11 @@ void StateMachine_Deinit(StateMachine_t *st) {
     st->events = NULL;
 }
 
+/**
+ * @brief Add state definition to state machine
+ * @param st pointer to state machine
+ * @param state state definition
+ */
 void StateMachine_DefineState(StateMachine_t *st, State_t state) {
     // check if already exist
     if(__StateMachine_GetStateIndex(st, state.id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX)
@@ -58,6 +70,11 @@ void StateMachine_DefineState(StateMachine_t *st, State_t state) {
         st->transitions[st->states_num-1][j] = st->states_num-1;
 }
 
+/**
+ * @brief Add event definition to state machine
+ * @param st pointer to state machine
+ * @param event event definition
+ */
 void StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
     assert(event.get!=NULL);
 
@@ -77,20 +94,32 @@ void StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
         st->transitions[i][st->events_num-1] = i;
 }
 
-void StateMachine_DefineTransition(StateMachine_t *st, uint32_t prev_id, uint32_t next_id, uint32_t event_id) {
-    assert(__StateMachine_GetStateIndex(st, prev_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
+/**
+ * @brief Set transition between two states caused by presents of specific event
+ * @param st pointer to state machine
+ * @param curr_id identifier of the state when event occurred
+ * @param next_id identifier of the state that should be set after event occurred
+ * @param event_id identifier of event causing transition
+ */
+void StateMachine_DefineTransition(StateMachine_t *st, uint32_t curr_id, uint32_t next_id, uint32_t event_id) {
+    assert(__StateMachine_GetStateIndex(st, curr_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
     assert(__StateMachine_GetStateIndex(st, next_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
     assert(__StateMachine_GetEventIndex(st, event_id)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX);
 
     // get internal indexes
-    const int32_t prev_index = __StateMachine_GetStateIndex(st, prev_id);
+    const int32_t curr_index = __StateMachine_GetStateIndex(st, curr_id);
     const int32_t next_index = __StateMachine_GetStateIndex(st, next_id);
     const int32_t event_index = __StateMachine_GetEventIndex(st, event_id);
 
     // set transition
-    st->transitions[prev_index][event_index] = next_index;
+    st->transitions[curr_index][event_index] = next_index;
 }
 
+/**
+ * @brief Set inital state for state machine, call enter function if exist
+ * @param st pointer to state machine
+ * @param initial_id identifier of state that should be at the begin of the program, must be defined before
+ */
 void StateMachine_Start(StateMachine_t *st, uint32_t initial_id) {
     assert(__StateMachine_GetStateIndex(st, initial_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
 
@@ -101,6 +130,10 @@ void StateMachine_Start(StateMachine_t *st, uint32_t initial_id) {
         st->states[st->curr_state_index].enter(st->buffer);
 }
 
+/**
+ * @brief Check if any event occurred, change state if it's required and call exit, enter, execute functions
+ * @param st pointer to state machine
+ */
 void StateMachine_Update(StateMachine_t *st) {
     // check if any event occurs
     // @todo assume that is only one event per iteration
@@ -139,7 +172,7 @@ void StateMachine_Update(StateMachine_t *st) {
 /**
  * @brief Search for internal index of specific state.
  * @param st pointer to state machine
- * @param state_id id of the state
+ * @param state_id identifier of the state
  * @return internal index of this state, unknown if state does not exist
  */
 int32_t __StateMachine_GetStateIndex(StateMachine_t *st, uint32_t state_id) {
@@ -154,7 +187,7 @@ int32_t __StateMachine_GetStateIndex(StateMachine_t *st, uint32_t state_id) {
 /**
  * @brief Search for internal index of specific event.
  * @param st pointer to state machine
- * @param event_id id of the event
+ * @param event_id identifier of the event
  * @return internal index of this event, unknown if state does not exist
  */
 int32_t __StateMachine_GetEventIndex(StateMachine_t *st, uint32_t event_id) {
