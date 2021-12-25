@@ -12,9 +12,9 @@ static int32_t __StateMachine_GetEventIndex(StateMachine_t *, uint32_t);
 /**
  * @brief Initialize a new StateMachine object
  * @param st pointer to used state machine
- * @param initial initial state
+ * @param buffer memory buffer for user data
  */
-void StateMachine_Init(StateMachine_t *st) {
+void StateMachine_Init(StateMachine_t *st, void *buffer) {
     // init fields
     st->curr_state_index = __STATE_MACHINE_UNKNOWN_STATE_INDEX;
     st->states_num = 0;
@@ -22,6 +22,7 @@ void StateMachine_Init(StateMachine_t *st) {
     st->states = NULL;
     st->events = NULL;
     st->transitions = NULL;
+    st->buffer = buffer;
 }
 
 void StateMachine_Deinit(StateMachine_t *st) {
@@ -81,7 +82,7 @@ void StateMachine_DefineTransition(StateMachine_t *st, uint32_t prev_id, uint32_
     assert(__StateMachine_GetStateIndex(st, next_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
     assert(__StateMachine_GetEventIndex(st, event_id)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX);
 
-    // get internal indecies
+    // get internal indexes
     const int32_t prev_index = __StateMachine_GetStateIndex(st, prev_id);
     const int32_t next_index = __StateMachine_GetStateIndex(st, next_id);
     const int32_t event_index = __StateMachine_GetEventIndex(st, event_id);
@@ -97,7 +98,7 @@ void StateMachine_Start(StateMachine_t *st, uint32_t initial_id) {
 
     // call enter function for initial state
     if(st->states[st->curr_state_index].enter!=NULL)
-        st->states[st->curr_state_index].enter();
+        st->states[st->curr_state_index].enter(st->buffer);
 }
 
 void StateMachine_Update(StateMachine_t *st) {
@@ -105,7 +106,7 @@ void StateMachine_Update(StateMachine_t *st) {
     // @todo assume that is only one event per iteration
     int32_t event_index = __STATE_MACHINE_UNKNOWN_EVENT_INDEX;
     for(uint32_t i=0; i<st->events_num; i++) {
-        if(st->events[i].get()) {
+        if(st->events[i].get(st->buffer)) {
             event_index = i;
             break;
         }
@@ -119,11 +120,11 @@ void StateMachine_Update(StateMachine_t *st) {
         if(next_state_index!=st->curr_state_index) {
             // call exit function for current state if exist
             if(st->states[st->curr_state_index].exit!=NULL)
-                st->states[st->curr_state_index].exit();
+                st->states[st->curr_state_index].exit(st->buffer);
 
             // call enter function for next state if exist
             if(st->states[next_state_index].enter!=NULL)
-                st->states[next_state_index].enter();
+                st->states[next_state_index].enter(st->buffer);
         }
 
         // change current state
@@ -132,7 +133,7 @@ void StateMachine_Update(StateMachine_t *st) {
     
     // call execute function for current state if exist
     if(st->states[st->curr_state_index].execute!=NULL)
-        st->states[st->curr_state_index].execute();
+        st->states[st->curr_state_index].execute(st->buffer);
 }
 
 /**

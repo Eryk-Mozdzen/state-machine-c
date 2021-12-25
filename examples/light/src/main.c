@@ -14,33 +14,33 @@
 #define EVENT_ON    0
 #define EVENT_OFF   1
 
-void enter_turn_on_state() {
+void enter_turn_on_state(void *input) {
     printf("Turn on light\n");
 }
 
-void execute_turn_on_state() {
+void execute_turn_on_state(void *input) {
     printf("Light is shining\n");
 }
 
-void enter_turn_off_state() {
+void enter_turn_off_state(void *input) {
     printf("Turn off light\n");
 }
 
-void execute_turn_off_state() {
+void execute_turn_off_state(void *input) {
     printf("Light is not shining\n");
 }
 
-char input[8];
-
-uint8_t get_turn_on_event() {
-    return input[0]=='1';
+uint8_t get_turn_on_event(void *input) {
+    return *(char *)input=='1';
 }
 
-uint8_t get_turn_off_event() {
-    return input[0]=='2';
+uint8_t get_turn_off_event(void *input) {
+    return *(char *)input=='2';
 }
 
 int main() {
+
+    char input = 'q';
 
     StateMachine_t state_machine;
     State_t on_state        = {STATE_ON,    &enter_turn_on_state,   &execute_turn_on_state,     NULL};
@@ -48,8 +48,8 @@ int main() {
     Event_t turn_on_event   = {EVENT_ON,    &get_turn_on_event  };
     Event_t turn_off_event  = {EVENT_OFF,   &get_turn_off_event };
 
-    // init state machine
-    StateMachine_Init(&state_machine);
+    // init state machine, link user input
+    StateMachine_Init(&state_machine, &input);
 
     // define states end events
     StateMachine_DefineState(&state_machine, on_state);
@@ -67,11 +67,15 @@ int main() {
 
     do {
 
-        scanf("%s[^\n]", input);
+        // read character from terminal
+        // avoid endline character
+        char tmp[8] = {0};
+        scanf("%s[^\n]", tmp);
+        input = tmp[0];
 
         StateMachine_Update(&state_machine);
 
-    } while(input[0]!='x');
+    } while(input!='x');
 
     // free memory
     StateMachine_Deinit(&state_machine);

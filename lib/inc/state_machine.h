@@ -18,15 +18,15 @@
 typedef struct {
     uint32_t id;
 
-    void (*enter)();
-    void (*execute)();
-    void (*exit)();
+    void (*enter)(void *);
+    void (*execute)(void *);
+    void (*exit)(void *);
 } State_t;
 
 typedef struct {
     uint32_t id;
 
-    uint8_t (*get)();
+    uint8_t (*get)(void *);
 } Event_t;
 
 typedef struct {
@@ -37,9 +37,11 @@ typedef struct {
     int32_t **transitions;
     uint32_t states_num;
     uint32_t events_num;
+
+    void *buffer;
 } StateMachine_t;
 
-void StateMachine_Init(StateMachine_t *);
+void StateMachine_Init(StateMachine_t *, void *);
 void StateMachine_Deinit(StateMachine_t *);
 
 void StateMachine_DefineState(StateMachine_t *, State_t);
