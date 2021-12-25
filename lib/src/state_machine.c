@@ -24,11 +24,11 @@ void StateMachine_Init(StateMachine_t *st, State_t initial) {
     st->transitions = NULL;
 
     // add initial state to database
-    StateMachine_AddState(st, initial);
+    StateMachine_DefineState(st, initial);
     
     // set current state
     st->curr_state_index = __StateMachine_GetStateIndex(st, initial);
-    if(initial.exit!=NULL)
+    if(initial.enter!=NULL)
         initial.enter();
 }
 
@@ -49,7 +49,7 @@ void StateMachine_Deinit(StateMachine_t *st) {
     st->events = NULL;
 }
 
-void StateMachine_AddState(StateMachine_t *st, State_t state) {
+void StateMachine_DefineState(StateMachine_t *st, State_t state) {
     // check if already exist
     if(__StateMachine_GetStateIndex(st, state)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX)
         return;
@@ -65,7 +65,7 @@ void StateMachine_AddState(StateMachine_t *st, State_t state) {
         st->transitions[st->states_num-1][j] = st->states_num-1;
 }
 
-void StateMachine_AddEvent(StateMachine_t *st, Event_t event) {
+void StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
     assert(event.get!=NULL);
 
     // check if already exist
@@ -84,7 +84,7 @@ void StateMachine_AddEvent(StateMachine_t *st, Event_t event) {
         st->transitions[i][st->events_num-1] = i;
 }
 
-void StateMachine_AddTransition(StateMachine_t *st, State_t prev, State_t next, Event_t event) {
+void StateMachine_DefineTransition(StateMachine_t *st, State_t prev, State_t next, Event_t event) {
     assert(__StateMachine_GetStateIndex(st, prev)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
     assert(__StateMachine_GetStateIndex(st, next)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
     assert(__StateMachine_GetEventIndex(st, event)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX);
@@ -100,7 +100,7 @@ void StateMachine_AddTransition(StateMachine_t *st, State_t prev, State_t next, 
 
 void StateMachine_Update(StateMachine_t *st) {
 
-    // check if eny event
+    // check if any event occurs
     // @todo assume that is only one event per iteration
     int32_t event_index = __STATE_MACHINE_UNKNOWN_EVENT_INDEX;
     for(uint32_t i=0; i<st->events_num; i++) {
@@ -125,11 +125,11 @@ void StateMachine_Update(StateMachine_t *st) {
                 st->states[next_state_index].enter();
         }
 
-        // change currnet state
+        // change current state
         st->curr_state_index = next_state_index;
     }
     
-    // call execute function for current if exist
+    // call execute function for current state if exist
     if(st->states[st->curr_state_index].execute!=NULL)
         st->states[st->curr_state_index].execute();
 }
