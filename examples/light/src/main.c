@@ -19,18 +19,6 @@ uint8_t get_turn_off_event() {
     return input[0]=='2';
 }
 
-void debug(StateMachine_t *st) {
-    printf("begin\n");
-    for(int i=0; i<st->states_num; i++) {
-        printf("state %d:", i);
-        for(int j=0; j<st->events_num; j++) {
-            printf("\t%d", st->transitions[i][j]);
-        }
-        printf("\n");
-    }
-    printf("end\n");
-}
-
 int main() {
 
     StateMachine_t state_machine;

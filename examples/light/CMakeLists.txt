@@ -1,23 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(StateMachineExample)
+project(ExampleLight)
 
 # compiler settings
 add_compile_options(-Wall -pedantic)
 
 # code source
-file(GLOB SOURCE "src/*.c" "../lib/src/*.c")
+file(GLOB SOURCE "src/*.c" "../../lib/src/*.c")
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 target_include_directories(${PROJECT_NAME} PUBLIC inc)
-target_include_directories(${PROJECT_NAME} PUBLIC ../lib/inc)
+target_include_directories(${PROJECT_NAME} PUBLIC ../../lib/inc)
 
 # linking
 target_link_libraries(${PROJECT_NAME} m)
 
-# cd ../example
 # mkdir build
 # cd build
 # cmake ..
 # make
-# ./StateMachineExample
+# ./ExampleLight
