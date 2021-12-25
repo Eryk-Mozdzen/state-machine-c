@@ -44,7 +44,7 @@ void StateMachine_Deinit(StateMachine_t *);
 
 void StateMachine_DefineState(StateMachine_t *, State_t);
 void StateMachine_DefineEvent(StateMachine_t *, Event_t);
-void StateMachine_DefineTransition(StateMachine_t *, State_t, State_t, Event_t);
+void StateMachine_DefineTransition(StateMachine_t *, uint32_t, uint32_t, uint32_t);
 
 void StateMachine_Update(StateMachine_t *);
 

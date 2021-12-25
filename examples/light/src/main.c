@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include "state_machine.h"
 
+#define STATE_ON    0
+#define STATE_OFF   1
+
+#define EVENT_ON    0
+#define EVENT_OFF   1
+
 void enter_turn_on_state() {
     printf("Turn on light\n");
 }
@@ -37,21 +43,24 @@ uint8_t get_turn_off_event() {
 int main() {
 
     StateMachine_t state_machine;
-    State_t on_state = {0, &enter_turn_on_state, &execute_turn_on_state, NULL};
-    State_t off_state = {1, &enter_turn_off_state, &execute_turn_off_state, NULL};
-    Event_t turn_on_event = {0, &get_turn_on_event};
-    Event_t turn_off_event = {1, &get_turn_off_event};
+    State_t on_state        = {STATE_ON,    &enter_turn_on_state,   &execute_turn_on_state,     NULL};
+    State_t off_state       = {STATE_OFF,   &enter_turn_off_state,  &execute_turn_off_state,    NULL};
+    Event_t turn_on_event   = {EVENT_ON,    &get_turn_on_event  };
+    Event_t turn_off_event  = {EVENT_OFF,   &get_turn_off_event };
 
+    // init state machine
     StateMachine_Init(&state_machine, off_state);
 
+    // define states end events
     StateMachine_DefineState(&state_machine, on_state);
     StateMachine_DefineState(&state_machine, off_state);    // not necessary 
 
     StateMachine_DefineEvent(&state_machine, turn_on_event);
     StateMachine_DefineEvent(&state_machine, turn_off_event);
 
-    StateMachine_DefineTransition(&state_machine, on_state, off_state, turn_off_event);
-    StateMachine_DefineTransition(&state_machine, off_state, on_state, turn_on_event);
+    // define state transitions
+    StateMachine_DefineTransition(&state_machine, STATE_ON, STATE_OFF, EVENT_OFF);  // if is in STATE_ON and EVENT_OFF occurres, change state to STATE_OFF
+    StateMachine_DefineTransition(&state_machine, STATE_OFF, STATE_ON, EVENT_ON);   // if is in STATE_OFF and EVENT_ON occurres, change state to STATE_ON
 
     do {
 
@@ -61,6 +70,7 @@ int main() {
 
     } while(input[0]!='x');
 
+    // free memory
     StateMachine_Deinit(&state_machine);
 
     return 0;

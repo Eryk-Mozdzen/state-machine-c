@@ -6,8 +6,8 @@
 
 #include "state_machine.h"
 
-static int32_t __StateMachine_GetStateIndex(StateMachine_t *, State_t);
-static int32_t __StateMachine_GetEventIndex(StateMachine_t *, Event_t);
+static int32_t __StateMachine_GetStateIndex(StateMachine_t *, uint32_t);
+static int32_t __StateMachine_GetEventIndex(StateMachine_t *, uint32_t);
 
 /**
  * @brief Initialize a new StateMachine object
@@ -27,7 +27,7 @@ void StateMachine_Init(StateMachine_t *st, State_t initial) {
     StateMachine_DefineState(st, initial);
     
     // set current state
-    st->curr_state_index = __StateMachine_GetStateIndex(st, initial);
+    st->curr_state_index = 0;
     if(initial.enter!=NULL)
         initial.enter();
 }
@@ -51,7 +51,7 @@ void StateMachine_Deinit(StateMachine_t *st) {
 
 void StateMachine_DefineState(StateMachine_t *st, State_t state) {
     // check if already exist
-    if(__StateMachine_GetStateIndex(st, state)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX)
+    if(__StateMachine_GetStateIndex(st, state.id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX)
         return;
 
     // allocate memory
@@ -69,7 +69,7 @@ void StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
     assert(event.get!=NULL);
 
     // check if already exist
-    if(__StateMachine_GetEventIndex(st, event)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX)
+    if(__StateMachine_GetEventIndex(st, event.id)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX)
         return;
 
     // allocate memory
@@ -84,15 +84,15 @@ void StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
         st->transitions[i][st->events_num-1] = i;
 }
 
-void StateMachine_DefineTransition(StateMachine_t *st, State_t prev, State_t next, Event_t event) {
-    assert(__StateMachine_GetStateIndex(st, prev)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
-    assert(__StateMachine_GetStateIndex(st, next)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
-    assert(__StateMachine_GetEventIndex(st, event)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX);
+void StateMachine_DefineTransition(StateMachine_t *st, uint32_t prev_id, uint32_t next_id, uint32_t event_id) {
+    assert(__StateMachine_GetStateIndex(st, prev_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
+    assert(__StateMachine_GetStateIndex(st, next_id)!=__STATE_MACHINE_UNKNOWN_STATE_INDEX);
+    assert(__StateMachine_GetEventIndex(st, event_id)!=__STATE_MACHINE_UNKNOWN_EVENT_INDEX);
 
     // get internal indecies
-    const int32_t prev_index = __StateMachine_GetStateIndex(st, prev);
-    const int32_t next_index = __StateMachine_GetStateIndex(st, next);
-    const int32_t event_index = __StateMachine_GetEventIndex(st, event);
+    const int32_t prev_index = __StateMachine_GetStateIndex(st, prev_id);
+    const int32_t next_index = __StateMachine_GetStateIndex(st, next_id);
+    const int32_t event_index = __StateMachine_GetEventIndex(st, event_id);
 
     // set transition
     st->transitions[prev_index][event_index] = next_index;
@@ -137,12 +137,12 @@ void StateMachine_Update(StateMachine_t *st) {
 /**
  * @brief Search for internal index of specific state.
  * @param st pointer to state machine
- * @param state state
+ * @param state_id id of the state
  * @return internal index of this state, unknown if state does not exist
  */
-int32_t __StateMachine_GetStateIndex(StateMachine_t *st, State_t state) {
+int32_t __StateMachine_GetStateIndex(StateMachine_t *st, uint32_t state_id) {
     for(uint32_t i=0; i<st->states_num; i++) {
-        if(st->states[i].id==state.id)
+        if(st->states[i].id==state_id)
             return i;
     }
     
@@ -152,12 +152,12 @@ int32_t __StateMachine_GetStateIndex(StateMachine_t *st, State_t state) {
 /**
  * @brief Search for internal index of specific event.
  * @param st pointer to state machine
- * @param event event
+ * @param event_id id of the event
  * @return internal index of this event, unknown if state does not exist
  */
-int32_t __StateMachine_GetEventIndex(StateMachine_t *st, Event_t event) {
+int32_t __StateMachine_GetEventIndex(StateMachine_t *st, uint32_t event_id) {
     for(uint32_t i=0; i<st->events_num; i++) {
-        if(st->events[i].id==event.id)
+        if(st->events[i].id==event_id)
             return i;
     }
     
