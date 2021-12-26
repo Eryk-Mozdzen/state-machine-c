@@ -6,7 +6,7 @@
  */
 
 #include <stdio.h>
-#include "state_machine.h"
+#include "finite_state_machine.h"
 
 // state and events identifiers
 // it can be any non-negative number 
@@ -41,7 +41,7 @@ int main() {
     // place for user input
     char input = 'q';
 
-    StateMachine_t state_machine;
+    FiniteStateMachine_t state_machine;
 
     // states and events definitions
     State_t on_state        = {STATE_ON,    NULL,   &execute_turn_on_state,     NULL};
@@ -50,21 +50,21 @@ int main() {
     Event_t turn_off_event  = {EVENT_OFF,   &get_turn_off_event };
 
     // init state machine, link user input
-    StateMachine_Init(&state_machine, &input);
+    FiniteStateMachine_Init(&state_machine, &input);
 
     // define states end events
-    StateMachine_DefineState(&state_machine, on_state);
-    StateMachine_DefineState(&state_machine, off_state);
+    FiniteStateMachine_DefineState(&state_machine, on_state);
+    FiniteStateMachine_DefineState(&state_machine, off_state);
 
-    StateMachine_DefineEvent(&state_machine, turn_on_event);
-    StateMachine_DefineEvent(&state_machine, turn_off_event);
+    FiniteStateMachine_DefineEvent(&state_machine, turn_on_event);
+    FiniteStateMachine_DefineEvent(&state_machine, turn_off_event);
 
     // define state transitions
-    StateMachine_DefineTransition(&state_machine, STATE_ON, STATE_OFF, EVENT_OFF);  // if is in STATE_ON and EVENT_OFF occurres, change state to STATE_OFF
-    StateMachine_DefineTransition(&state_machine, STATE_OFF, STATE_ON, EVENT_ON);   // if is in STATE_OFF and EVENT_ON occurres, change state to STATE_ON
+    FiniteStateMachine_DefineTransition(&state_machine, STATE_ON, STATE_OFF, EVENT_OFF);  // if is in STATE_ON and EVENT_OFF occurres, change state to STATE_OFF
+    FiniteStateMachine_DefineTransition(&state_machine, STATE_OFF, STATE_ON, EVENT_ON);   // if is in STATE_OFF and EVENT_ON occurres, change state to STATE_ON
 
     // begin from initial state
-    StateMachine_Start(&state_machine, STATE_OFF);
+    FiniteStateMachine_Start(&state_machine, STATE_OFF);
 
     do {
 
@@ -75,12 +75,12 @@ int main() {
         input = tmp[0];
 
         // take care for all events, state transitions and state functions
-        StateMachine_Update(&state_machine);
+        FiniteStateMachine_Update(&state_machine);
 
     } while(input!='x');
 
     // free memory
-    StateMachine_Deinit(&state_machine);
+    FiniteStateMachine_Deinit(&state_machine);
 
     return 0;
 }

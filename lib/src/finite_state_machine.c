@@ -1,23 +1,23 @@
 /**
- * @file state_machine.c
+ * @file finite_state_machine.c
  * @author Eryk Możdżeń
  * @date 2021-12-24
  */
 
-#include "state_machine.h"
+#include "finite_state_machine.h"
 
 /**
  * @brief functions only for internal use
  */
-static uint8_t __StateMachine_GetStateIndex(StateMachine_t *, uint32_t, uint32_t *);
-static uint8_t __StateMachine_GetEventIndex(StateMachine_t *, uint32_t, uint32_t *);
+static uint8_t __FiniteStateMachine_GetStateIndex(FiniteStateMachine_t *, uint32_t, uint32_t *);
+static uint8_t __FiniteStateMachine_GetEventIndex(FiniteStateMachine_t *, uint32_t, uint32_t *);
 
 /**
  * @brief Initialize fields in state machine structure
  * @param st pointer to state machine
  * @param buffer memory buffer for user data
  */
-void StateMachine_Init(StateMachine_t *st, void *buffer) {
+void FiniteStateMachine_Init(FiniteStateMachine_t *st, void *buffer) {
     // init fields
     st->curr_state_index = 0;
     st->states_num = 0;
@@ -32,7 +32,7 @@ void StateMachine_Init(StateMachine_t *st, void *buffer) {
  * @brief Free memory allocated by state machine
  * @param st pointer to state machine
  */
-void StateMachine_Deinit(StateMachine_t *st) {
+void FiniteStateMachine_Deinit(FiniteStateMachine_t *st) {
     // deallocate all memory
     for(uint32_t i=0; i<st->states_num; i++)
         free(st->transitions[i]);
@@ -55,9 +55,9 @@ void StateMachine_Deinit(StateMachine_t *st) {
  * @param state state definition
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t StateMachine_DefineState(StateMachine_t *st, State_t state) {
+uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, State_t state) {
     // check if already exist
-    if(!__StateMachine_GetStateIndex(st, state.id, NULL))
+    if(!__FiniteStateMachine_GetStateIndex(st, state.id, NULL))
         return EXIT_FAILURE;
 
     // allocate memory
@@ -85,9 +85,9 @@ uint8_t StateMachine_DefineState(StateMachine_t *st, State_t state) {
  * @param event event definition
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
+uint8_t FiniteStateMachine_DefineEvent(FiniteStateMachine_t *st, Event_t event) {
     // check if already exist
-    if(!__StateMachine_GetEventIndex(st, event.id, NULL))
+    if(!__FiniteStateMachine_GetEventIndex(st, event.id, NULL))
         return EXIT_FAILURE;
 
     // allocate memory
@@ -119,17 +119,17 @@ uint8_t StateMachine_DefineEvent(StateMachine_t *st, Event_t event) {
  * @param event_id identifier of event causing transition
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t StateMachine_DefineTransition(StateMachine_t *st, uint32_t curr_id, uint32_t next_id, uint32_t event_id) {
+uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *st, uint32_t curr_id, uint32_t next_id, uint32_t event_id) {
     uint32_t curr_index = 0;
     uint32_t next_index = 0;
     uint32_t event_index = 0;
 
     // get internal indexes
-    if(__StateMachine_GetStateIndex(st, curr_id, &curr_index))
+    if(__FiniteStateMachine_GetStateIndex(st, curr_id, &curr_index))
         return EXIT_FAILURE;
-    if(__StateMachine_GetStateIndex(st, next_id, &next_index))
+    if(__FiniteStateMachine_GetStateIndex(st, next_id, &next_index))
         return EXIT_FAILURE;
-    if(__StateMachine_GetEventIndex(st, event_id, &event_index))
+    if(__FiniteStateMachine_GetEventIndex(st, event_id, &event_index))
         return EXIT_FAILURE;
 
     // set transition
@@ -144,8 +144,8 @@ uint8_t StateMachine_DefineTransition(StateMachine_t *st, uint32_t curr_id, uint
  * @param initial_id identifier of state that should be at the begin of the program, must be defined before
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t StateMachine_Start(StateMachine_t *st, uint32_t initial_id) {
-    if(__StateMachine_GetStateIndex(st, initial_id, &st->curr_state_index))
+uint8_t FiniteStateMachine_Start(FiniteStateMachine_t *st, uint32_t initial_id) {
+    if(__FiniteStateMachine_GetStateIndex(st, initial_id, &st->curr_state_index))
         return EXIT_FAILURE;
 
     // call enter function for initial state
@@ -160,7 +160,7 @@ uint8_t StateMachine_Start(StateMachine_t *st, uint32_t initial_id) {
  * @param st pointer to state machine
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t StateMachine_Update(StateMachine_t *st) {
+uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
     if(!st->states_num)
         return EXIT_FAILURE;
 
@@ -209,7 +209,7 @@ uint8_t StateMachine_Update(StateMachine_t *st) {
  * @param state_index internal index of this state, unknown if state does not exist
  * @return status of operation, 0 if success, 1 if state not defined
  */
-uint8_t __StateMachine_GetStateIndex(StateMachine_t *st, uint32_t state_id, uint32_t *state_index) {
+uint8_t __FiniteStateMachine_GetStateIndex(FiniteStateMachine_t *st, uint32_t state_id, uint32_t *state_index) {
     for(uint32_t i=0; i<st->states_num; i++) {
         if(st->states[i].id==state_id) {
             if(state_index!=NULL)
@@ -228,7 +228,7 @@ uint8_t __StateMachine_GetStateIndex(StateMachine_t *st, uint32_t state_id, uint
  * @param event_index internal index of this event, unknown if event does not exist
  * @return status of operation, 0 if success, 1 if event not defined
  */
-uint8_t __StateMachine_GetEventIndex(StateMachine_t *st, uint32_t event_id, uint32_t *event_index) {
+uint8_t __FiniteStateMachine_GetEventIndex(FiniteStateMachine_t *st, uint32_t event_id, uint32_t *event_index) {
     for(uint32_t i=0; i<st->events_num; i++) {
         if(st->events[i].id==event_id) {
             if(event_index!=NULL)

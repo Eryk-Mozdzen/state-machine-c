@@ -1,5 +1,5 @@
 /**
- * @file state_machine.h
+ * @file finite_state_machine.h
  * @author Eryk Możdżeń
  * @date 2021-12-24
  */
@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#ifndef __STATE_MACHINE_H__
-#define __STATE_MACHINE_H__
+#ifndef __FINITE_STATE_MACHINE_H__
+#define __FINITE_STATE_MACHINE_H__
 
 /**
  * @brief state definition data
@@ -44,16 +44,16 @@ typedef struct {
     uint32_t events_num;        /*< number of defined events */
 
     void *buffer;               /*< memory buffer for user data, allocated and deallocated by user, is passed ass argument to all state and event functions */
-} StateMachine_t;
+} FiniteStateMachine_t;
 
-void StateMachine_Init(StateMachine_t *, void *);
-void StateMachine_Deinit(StateMachine_t *);
+void FiniteStateMachine_Init(FiniteStateMachine_t *, void *);
+void FiniteStateMachine_Deinit(FiniteStateMachine_t *);
 
-uint8_t StateMachine_DefineState(StateMachine_t *, State_t);
-uint8_t StateMachine_DefineEvent(StateMachine_t *, Event_t);
-uint8_t StateMachine_DefineTransition(StateMachine_t *, uint32_t, uint32_t, uint32_t);
+uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *, State_t);
+uint8_t FiniteStateMachine_DefineEvent(FiniteStateMachine_t *, Event_t);
+uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *, uint32_t, uint32_t, uint32_t);
 
-uint8_t StateMachine_Start(StateMachine_t *, uint32_t);
-uint8_t StateMachine_Update(StateMachine_t *);
+uint8_t FiniteStateMachine_Start(FiniteStateMachine_t *, uint32_t);
+uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *);
 
 #endif
