@@ -10,26 +10,26 @@
 // enter, execute and exit functions for state definitions
 // must returns void and takes void* argument
 
-void enter_turn_on_state(void *input) {
+void enter_turn_on_state(void *data) {
     printf("Enter on state\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }
 
-void execute_turn_on_state(void *input) {
+void execute_turn_on_state(void *data) {
     printf("Light is shining\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }
 
-void exit_turn_on_state(void *input) {
+void exit_turn_on_state(void *data) {
     printf("Exit on state\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }
 
-void enter_turn_off_state(void *input) {
+void enter_turn_off_state(void *data) {
     printf("Enter off state\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }
 
-void execute_turn_off_state(void *input) {
+void execute_turn_off_state(void *data) {
     printf("Light is not shining\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }
 
-void exit_turn_off_state(void *input) {
+void exit_turn_off_state(void *data) {
     printf("Exit off state\n\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }

@@ -8,6 +8,7 @@
 #ifndef __STATES_H__
 #define __STATES_H__
 
+#include "data.h"
 #include <stdio.h>
 
 typedef enum {

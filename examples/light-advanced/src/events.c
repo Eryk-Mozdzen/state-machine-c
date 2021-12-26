@@ -9,10 +9,10 @@
 
 // get functions for event definitions
 // must returns uint8_t and takes void* argument
-uint8_t get_turn_on_event(void *input) {
-    return *(char *)input=='1';
+uint8_t get_turn_on_event(void *data) {
+    return ((CustomUserData_t *)data)->input=='1';
 }
 
-uint8_t get_turn_off_event(void *input) {
-    return *(char *)input=='2';
+uint8_t get_turn_off_event(void *data) {
+    return ((CustomUserData_t *)data)->input=='2';
 }

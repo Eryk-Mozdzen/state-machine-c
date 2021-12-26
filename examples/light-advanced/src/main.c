@@ -6,21 +6,25 @@
  */
 
 #include "state_machine.h"
+
+#include "data.h"
 #include "states.h"
 #include "events.h"
+
 #include "non_block.h"  // kbhit, getch
 #include <unistd.h>     // usleep
 
 int main() {
-
-    // place for user input
-    char input = 'q';
+    
     set_conio_terminal_mode();
+
+    // user data
+    CustomUserData_t data = {'q'};
 
     StateMachine_t state_machine;
 
     // init state machine, link user input
-    StateMachine_Init(&state_machine, &input);
+    StateMachine_Init(&state_machine, &data);
 
     // define states end events
     StateMachine_DefineState(&state_machine, (State_t){STATE_ON,    &enter_turn_on_state,   &execute_turn_on_state,     &exit_turn_on_state});
@@ -36,9 +40,10 @@ int main() {
     // begin from initial state
     StateMachine_Start(&state_machine, STATE_OFF);
 
-    while(input!='x') {
+    // loop unit user click 'x' on the keyboard
+    while(data.input!='x') {
         if(kbhit())
-            input = getch();
+            data.input = getch();
 
         StateMachine_Update(&state_machine);
 

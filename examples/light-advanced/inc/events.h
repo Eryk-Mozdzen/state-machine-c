@@ -8,6 +8,7 @@
 #ifndef __EVENTS_H__
 #define __EVENTS_H__
 
+#include "data.h"
 #include <stdint.h>
 
 typedef enum {
