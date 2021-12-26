@@ -7,16 +7,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #ifndef __STATE_MACHINE_H__
 #define __STATE_MACHINE_H__
-
-/**
- * @brief this value of index means that state or event does not exist
- */
-#define __STATE_MACHINE_UNKNOWN_STATE_INDEX   -1
-#define __STATE_MACHINE_UNKNOWN_EVENT_INDEX   -1
 
 /**
  * @brief state definition data
@@ -42,11 +35,11 @@ typedef struct {
  * @brief state machine object structure
  */
 typedef struct {
-    int32_t curr_state_index;   /*< index, current state of the machine */
+    uint32_t curr_state_index;  /*< index, current state of the machine */
 
     State_t *states;            /*< indexed set of defined states */
     Event_t *events;            /*< indexed set of defined events */
-    int32_t **transitions;      /*< transition table, rows represents states, columns represents events */
+    uint32_t **transitions;     /*< transition table, rows represents states, columns represents events */
     uint32_t states_num;        /*< number of defined states */
     uint32_t events_num;        /*< number of defined events */
 
