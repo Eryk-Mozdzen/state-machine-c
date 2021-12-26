@@ -16,7 +16,7 @@
  */
 typedef struct {
     uint32_t id;                /*< user identifier of specific state, must be uniq */
-
+    
     void (*enter)(void *);      /*< function called once, at the beginning of the state, after switch from previous one, set NULL if not needed */
     void (*execute)(void *);    /*< function called every time when the state is used, set NULL if not needed  */
     void (*exit)(void *);       /*< function called once, at the end of the state, before switch to the next one, set NULL if not needed  */
@@ -49,11 +49,11 @@ typedef struct {
 void StateMachine_Init(StateMachine_t *, void *);
 void StateMachine_Deinit(StateMachine_t *);
 
-void StateMachine_DefineState(StateMachine_t *, State_t);
-void StateMachine_DefineEvent(StateMachine_t *, Event_t);
-void StateMachine_DefineTransition(StateMachine_t *, uint32_t, uint32_t, uint32_t);
+uint8_t StateMachine_DefineState(StateMachine_t *, State_t);
+uint8_t StateMachine_DefineEvent(StateMachine_t *, Event_t);
+uint8_t StateMachine_DefineTransition(StateMachine_t *, uint32_t, uint32_t, uint32_t);
 
-void StateMachine_Start(StateMachine_t *, uint32_t);
-void StateMachine_Update(StateMachine_t *);
+uint8_t StateMachine_Start(StateMachine_t *, uint32_t);
+uint8_t StateMachine_Update(StateMachine_t *);
 
 #endif
