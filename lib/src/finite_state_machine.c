@@ -73,8 +73,9 @@ uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, State_t state) 
 
     // write and init transitions
     st->states[st->states_num-1] = state;
-    for(uint32_t j=0; j<st->events_num; j++)
-        st->transitions[st->states_num-1][j] = st->states_num-1;
+    //for(uint32_t j=0; j<st->events_num; j++)
+    //    st->transitions[st->states_num-1][j] = st->states_num-1;
+    st->transitions[st->states_num-1] = NULL;
     
     return EXIT_SUCCESS;
 }
