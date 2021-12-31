@@ -10,9 +10,6 @@
  * @brief functions only for internal use
  */
 static uint8_t __FiniteStateMachine_GetStateIndex(FiniteStateMachine_t *, uint32_t, uint32_t *);
-static void __FiniteStateMachine_CallStateEnter(FiniteStateMachine_t *, uint32_t);
-static void __FiniteStateMachine_CallStateExecute(FiniteStateMachine_t *, uint32_t);
-static void __FiniteStateMachine_CallStateExit(FiniteStateMachine_t *, uint32_t);
 
 /**
  * @brief Initialize fields in state machine structure
@@ -56,7 +53,7 @@ uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, StateConfig_t s
 
     // allocate memory
     st->states_num++;
-    st->states = (State_t *)realloc(st->states, st->states_num*sizeof(State_t));
+    st->states = (__State_t *)realloc(st->states, st->states_num*sizeof(__State_t));
     if(!st->states)
         return EXIT_FAILURE;
 
@@ -88,7 +85,7 @@ uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *st, uint32_t c
 
     // allocate memory
     st->states[curr_index].events_num++;
-    st->states[curr_index].events = (Event_t *)realloc(st->states[curr_index].events, st->states[curr_index].events_num*sizeof(Event_t));
+    st->states[curr_index].events = (__Event_t *)realloc(st->states[curr_index].events, st->states[curr_index].events_num*sizeof(__Event_t));
     if(!st->states[curr_index].events)
     	return EXIT_FAILURE;
 
@@ -126,7 +123,7 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
         return EXIT_FAILURE;
 
     // check if any event defined for current state occurs
-    Event_t *event = NULL;
+    __Event_t *event = NULL;
     for(uint32_t i=0; i<st->states[st->curr_state_index].events_num; i++) {
     	// check if event occurs
 		if(st->states[st->curr_state_index].events[i].config.get(st->buffer)) {
