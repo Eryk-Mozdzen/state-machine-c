@@ -18,13 +18,6 @@ typedef enum {
 	RC5_STATE_MID0
 } RC5_State_t;
 
-typedef enum {
-	RC5_EVENT_LONG_SPACE,
-	RC5_EVENT_SHORT_SPACE,
-	RC5_EVENT_LONG_PULSE,
-	RC5_EVENT_SHORT_PULSE
-} RC5_Event_t;
-
 typedef union {
 	struct {
 		uint8_t toggle : 1;

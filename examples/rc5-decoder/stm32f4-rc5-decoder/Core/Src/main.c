@@ -110,22 +110,17 @@ int main(void)
 
   FiniteStateMachine_Init(&fsm, &data);
 
-	FiniteStateMachine_DefineState(&fsm, (State_t){RC5_STATE_START1,	NULL,		NULL, NULL});
-	FiniteStateMachine_DefineState(&fsm, (State_t){RC5_STATE_MID1,		&rc5_emit1, NULL, NULL});
-	FiniteStateMachine_DefineState(&fsm, (State_t){RC5_STATE_START0,	NULL,		NULL, NULL});
-	FiniteStateMachine_DefineState(&fsm, (State_t){RC5_STATE_MID0,		&rc5_emit0, NULL, NULL});
+	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START1,	NULL,		NULL, NULL});
+	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID1,	&rc5_emit1, NULL, NULL});
+	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START0,	NULL,		NULL, NULL});
+	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID0,	&rc5_emit0, NULL, NULL});
 
-	FiniteStateMachine_DefineEvent(&fsm, (Event_t){RC5_EVENT_LONG_SPACE,	NULL});
-	FiniteStateMachine_DefineEvent(&fsm, (Event_t){RC5_EVENT_SHORT_SPACE,	NULL});
-	FiniteStateMachine_DefineEvent(&fsm, (Event_t){RC5_EVENT_LONG_PULSE,	NULL});
-	FiniteStateMachine_DefineEvent(&fsm, (Event_t){RC5_EVENT_SHORT_PULSE,	NULL});
-
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START1, RC5_STATE_MID1, RC5_EVENT_SHORT_SPACE);
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1, RC5_STATE_START1, RC5_EVENT_SHORT_PULSE);
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1, RC5_STATE_MID0, RC5_EVENT_LONG_PULSE);
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0, RC5_STATE_MID1, RC5_EVENT_LONG_SPACE);
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START0, RC5_STATE_MID0, RC5_EVENT_SHORT_SPACE);
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0, RC5_STATE_START0, RC5_EVENT_SHORT_PULSE);
+	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START1,	RC5_STATE_MID1,		(EventConfig_t){0,	NULL, NULL});
+	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,	RC5_STATE_START1,	(EventConfig_t){0,	NULL, NULL});
+	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, NULL});
+	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,	RC5_STATE_MID1,		(EventConfig_t){0,	NULL, NULL});
+	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, NULL});
+	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,	RC5_STATE_START0,	(EventConfig_t){0,	NULL, NULL});
 
   HAL_TIM_Base_Start_IT(&htim11);
   //FiniteStateMachine_Start(&fsm, RC5_STATE_MID1);

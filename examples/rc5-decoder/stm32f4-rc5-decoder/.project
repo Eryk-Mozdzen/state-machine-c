@@ -33,7 +33,7 @@
 		<link>
 			<name>lib</name>
 			<type>2</type>
-			<location>C:/Users/ermoz/Desktop/state-machine-c/lib</location>
+			<location>/home/emozdzen/Desktop/state-machine-c/lib</location>
 		</link>
 	</linkedResources>
 </projectDescription>
