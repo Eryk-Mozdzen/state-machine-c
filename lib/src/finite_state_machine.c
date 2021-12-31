@@ -137,7 +137,7 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
 		}
     }
 
-    if(!event) {
+    if(event) {
 		// call exit function for current state if exist
 		if(st->states[st->curr_state_index].config.exit!=NULL)
 			st->states[st->curr_state_index].config.exit(st->buffer);

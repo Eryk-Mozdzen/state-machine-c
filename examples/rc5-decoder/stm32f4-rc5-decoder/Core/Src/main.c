@@ -52,9 +52,7 @@
 /* USER CODE BEGIN PV */
 
 FiniteStateMachine_t fsm;
-
-uint8_t ready = 0;
-uint16_t frame[14] = {0};
+RC5_FSM_Data_t data = {0};
 
 /* USER CODE END PV */
 
@@ -106,47 +104,41 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  RC5_FSM_Data_t data = {0};
+  data.bits_ready = 0;
+  data.message = (const RC5_Message_t){0};
+  data.htim = &htim11;
+  data.rx_port = RECEIVER_GPIO_Port;
+  data.rx_pin = RECEIVER_Pin;
 
   FiniteStateMachine_Init(&fsm, &data);
 
-	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START1,	NULL,		NULL, NULL});
-	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID1,	&rc5_emit1, NULL, NULL});
-	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START0,	NULL,		NULL, NULL});
-	FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID0,	&rc5_emit0, NULL, NULL});
+  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START1,	NULL,		NULL, NULL});
+  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID1,		&rc5_emit1, NULL, NULL});
+  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START0,	NULL,		NULL, NULL});
+  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID0,		&rc5_emit0, NULL, NULL});
 
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START1,	RC5_STATE_MID1,		(EventConfig_t){0,	NULL, NULL});
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,	RC5_STATE_START1,	(EventConfig_t){0,	NULL, NULL});
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, NULL});
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,	RC5_STATE_MID1,		(EventConfig_t){0,	NULL, NULL});
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, NULL});
-	FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,	RC5_STATE_START0,	(EventConfig_t){0,	NULL, NULL});
+  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START1,	RC5_STATE_MID1,		(EventConfig_t){0,	NULL, &rc5_get_short_space});
+  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,		RC5_STATE_START1,	(EventConfig_t){0,	NULL, &rc5_get_short_pulse});
+  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,		RC5_STATE_MID0,		(EventConfig_t){0,	NULL, &rc5_get_long_pulse});
+  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,		RC5_STATE_MID1,		(EventConfig_t){0,	NULL, &rc5_get_long_space});
+  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,		RC5_STATE_START0,	(EventConfig_t){0,	NULL, &rc5_get_short_space});
+  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, &rc5_get_short_pulse});
 
   HAL_TIM_Base_Start_IT(&htim11);
-  //FiniteStateMachine_Start(&fsm, RC5_STATE_MID1);
 
   while(1) {
 
 	  char buffer[64] = {0};
-	  sprintf(buffer, "Hello world\n");
-	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), HAL_MAX_DELAY);
+	  //sprintf(buffer, "Hello world   0x%02X\n\r", data.message.frame);
+	  //HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), HAL_MAX_DELAY);
 
-	  /*if(data.bits_ready==14) {
+	  if(data.bits_ready==14) {
 
 		  sprintf(buffer, "Toggle: %u Address: 0x%02X Command: 0x%02X\n", data.message.toggle, data.message.address, data.message.command);
 		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), HAL_MAX_DELAY);
 
 		  data.bits_ready = 0;
-		  data.message.frame = 0;
-
-	  }*/
-
-	  if(ready==14) {
-
-		  sprintf(buffer, "Toggle: %u Address: 0x%02X Command: 0x%02X\n", data.message.toggle, data.message.address, data.message.command);
-		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), HAL_MAX_DELAY);
-
-		  ready = 0;
+		  data.message = (const RC5_Message_t){0};
 	  }
 
     /* USER CODE END WHILE */
@@ -203,20 +195,22 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance==TIM11) {
-		ready = 0;
+	if(htim->Instance==data.htim->Instance) {
+		data.bits_ready = 0;
+		data.message = (const RC5_Message_t){0};
+		__HAL_TIM_SET_COUNTER(data.htim, 0);
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if(GPIO_Pin==RECEIVER_Pin) {
-		//FiniteStateMachine_Update(&fsm);
+	if(GPIO_Pin==data.rx_pin) {
+		if(data.bits_ready==0) {
+			__HAL_TIM_SET_COUNTER(data.htim, 0);
 
-		frame[ready] = __HAL_TIM_GET_COUNTER(&htim11);
+			FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
+		}
 
-		__HAL_TIM_SET_COUNTER(&htim11, 0);
-
-		ready++;
+		FiniteStateMachine_Update(&fsm);
 	}
 }
 
