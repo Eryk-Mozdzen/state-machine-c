@@ -9,14 +9,14 @@ TransmitterRC5::TransmitterRC5(int pin) {
 void TransmitterRC5::sendBit(bool bit) {
   if(bit) {
     digitalWrite(this->pin, HIGH);
-    delayMicroseconds(SPACE);
-    digitalWrite(this->pin, LOW);
     delayMicroseconds(PULSE);
+    digitalWrite(this->pin, LOW);
+    delayMicroseconds(SPACE);
   } else {
     digitalWrite(this->pin, LOW);
-    delayMicroseconds(PULSE);
-    digitalWrite(this->pin, HIGH);
     delayMicroseconds(SPACE);
+    digitalWrite(this->pin, HIGH);
+    delayMicroseconds(PULSE);
   }
 }
 
@@ -33,7 +33,10 @@ void TransmitterRC5::send(uint8_t toggle, uint8_t address, uint8_t command) {
     bool bit = (frame & (1<<i))>0;
 
     this->sendBit(bit);
+    Serial.print(bit);
   }
+  Serial.println("");
 
   digitalWrite(this->pin, HIGH);
 }
+

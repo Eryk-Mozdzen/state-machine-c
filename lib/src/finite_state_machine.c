@@ -74,10 +74,14 @@ uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, StateConfig_t s
  * @return status of operation, 0 if success, 1 if error
  */
 uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *st, uint32_t curr_id, uint32_t next_id, EventConfig_t event_config) {
-    uint32_t curr_index = 0;
-    uint32_t next_index = 0;
+	if(curr_id==next_id)
+    	return EXIT_FAILURE;
+    if(event_config.get==NULL)
+    	return EXIT_FAILURE;
 
     // get internal indexes
+    uint32_t curr_index = 0;
+    uint32_t next_index = 0;
     if(__FiniteStateMachine_GetStateIndex(st, curr_id, &curr_index))
         return EXIT_FAILURE;
     if(__FiniteStateMachine_GetStateIndex(st, next_id, &next_index))
@@ -107,14 +111,14 @@ uint8_t FiniteStateMachine_Start(FiniteStateMachine_t *st, uint32_t initial_id) 
         return EXIT_FAILURE;
 
     // call enter function for initial state
-    if(st->states[st->curr_state_index].config.enter!=NULL)
+    if(st->states[st->curr_state_index].config.enter)
         st->states[st->curr_state_index].config.enter(st->buffer);
 
     return EXIT_SUCCESS;
 }
 
 /**
- * @brief Check if any event occurred, change state if it's required and call exit, enter, execute functions
+ * @brief Check if any event occurred, change state if it's required
  * @param st pointer to state machine
  * @return status of operation, 0 if success, 1 if error
  */
@@ -139,22 +143,38 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
 
     if(event) {
 		// call exit function for current state if exist
-		if(st->states[st->curr_state_index].config.exit!=NULL)
+		if(st->states[st->curr_state_index].config.exit)
 			st->states[st->curr_state_index].config.exit(st->buffer);
 
+		// call execute function for this event if exist
+		if(event->config.execute)
+			event->config.execute(st->buffer);
+
 		// call enter function for next state if exist
-		if(st->states[event->next_index].config.enter!=NULL)
+		if(st->states[event->next_index].config.enter)
 			st->states[event->next_index].config.enter(st->buffer);
 
 		// change current state
 		st->curr_state_index = event->next_index;
     }
-    
-    // call execute function for current state if exist
-    if(st->states[st->curr_state_index].config.execute!=NULL)
-        st->states[st->curr_state_index].config.execute(st->buffer);
 
     return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Call execute function for current state
+ * @param st pointer to state machine
+ * @return status of operation, 0 if success, 1 if error
+ */
+uint8_t FiniteStateMachine_Execute(FiniteStateMachine_t *st) {
+	if(!st->states_num)
+		return EXIT_FAILURE;
+
+	// call execute function for current state if exist
+	if(st->states[st->curr_state_index].config.execute)
+		st->states[st->curr_state_index].config.execute(st->buffer);
+
+	return EXIT_SUCCESS;
 }
 
 /**
@@ -167,7 +187,7 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
 uint8_t __FiniteStateMachine_GetStateIndex(FiniteStateMachine_t *st, uint32_t state_id, uint32_t *state_index) {
     for(uint32_t i=0; i<st->states_num; i++) {
         if(st->states[i].config.id==state_id) {
-            if(state_index!=NULL)
+            if(state_index)
                 *state_index = i;
             return EXIT_SUCCESS;
         }

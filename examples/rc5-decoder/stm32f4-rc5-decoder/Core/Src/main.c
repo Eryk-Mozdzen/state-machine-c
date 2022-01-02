@@ -53,7 +53,7 @@
 /* USER CODE BEGIN PV */
 
 FiniteStateMachine_t fsm;
-RC5_FSM_Data_t data = {0};
+RC5_FSM_Data_t data;
 
 /* USER CODE END PV */
 
@@ -105,7 +105,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  data.bits_ready = 0;
+  data.bits_ready = -1;
   data.message = (const RC5_Message_t){0};
 
   FiniteStateMachine_Init(&fsm, &data);
@@ -124,25 +124,19 @@ int main(void)
 
   UART_SetSTDOUT(&huart2);
 
-  //HAL_TIM_Base_Start(&htim11);
   HAL_TIM_Base_Start_IT(&htim11);
 
   while(1) {
 
 	  if(data.bits_ready==14) {
 
-		  printf("Start: %u Toggle: %u Address: 0x%02X Command: 0x%02X\n\rFrame: 0x%04X\n\r",
-				  data.message.start,
+		  printf("Toggle: %u Address: 0x%02X Command: 0x%02X\n\r",
 				  data.message.toggle,
 				  data.message.address,
-				  data.message.command,
-				  data.message.frame
+				  data.message.command
 		  );
 
-		  FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
-
-		  data.message = (const RC5_Message_t){0};
-		  data.bits_ready = 0;
+		  data.bits_ready = -1;
 	  }
 
     /* USER CODE END WHILE */
@@ -203,12 +197,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if(data.bits_ready==14)
 			return;
 
-		data.message = (const RC5_Message_t){0};
-		data.bits_ready = 0;
-
-		FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
-
-		//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+		data.bits_ready = -1;
 	}
 }
 
@@ -217,18 +206,23 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		if(data.bits_ready==14)
 			return;
 
+		if(data.bits_ready==-1) {
+			data.bits_ready = 0;
+
+			__HAL_TIM_SET_COUNTER(&htim11, 0);
+
+			FiniteStateMachine_Start(&fsm, RC5_STATE_MID1);
+
+			return;
+		}
+
 		data.state = HAL_GPIO_ReadPin(RECEIVER_GPIO_Port, RECEIVER_Pin);
 		data.counter = __HAL_TIM_GET_COUNTER(&htim11);
 
-		if(data.bits_ready==0) {
-			__HAL_TIM_SET_COUNTER(&htim11, 0);
-
-			FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
-		}
-
-		FiniteStateMachine_Update(&fsm);
-
 		__HAL_TIM_SET_COUNTER(&htim11, 0);
+
+		FiniteStateMachine_Execute(&fsm);
+		FiniteStateMachine_Update(&fsm);
 	}
 }
 
@@ -262,6 +256,11 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+
+	while(1) {
+
+	}
+
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

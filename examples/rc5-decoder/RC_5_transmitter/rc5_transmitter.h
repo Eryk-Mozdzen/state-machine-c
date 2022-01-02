@@ -15,3 +15,4 @@ class TransmitterRC5 {
 
     void send(uint8_t, uint8_t, uint8_t);
 };
+

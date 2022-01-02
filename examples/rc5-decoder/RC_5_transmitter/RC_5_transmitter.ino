@@ -27,7 +27,8 @@ void loop(){
 
   toggle = !toggle;
   command++;
-  command %=0x3F;
+  command %=0x40;
   
   delay(1000);
 }
+

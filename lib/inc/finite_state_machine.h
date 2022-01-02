@@ -33,5 +33,6 @@ uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *, uint32_t, ui
 
 uint8_t FiniteStateMachine_Start(FiniteStateMachine_t *, uint32_t);
 uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *);
+uint8_t FiniteStateMachine_Execute(FiniteStateMachine_t *);
 
 #endif

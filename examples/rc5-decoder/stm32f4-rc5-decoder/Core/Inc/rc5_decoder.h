@@ -14,7 +14,7 @@
 
 #define RC5_TIME_SHORT		889		// us
 #define RC5_TIME_LONG		1778	// us
-#define RC5_TIME_TOLERANCE	200		// us
+#define RC5_TIME_TOLERANCE	444		// us
 #define RC5_TIME_PRESCALER	1		// us/LSB
 
 typedef enum {
@@ -35,7 +35,7 @@ typedef union {
 } RC5_Message_t;
 
 typedef struct {
-	uint8_t bits_ready;
+	int8_t bits_ready;
 	RC5_Message_t message;
 
 	uint32_t counter;
