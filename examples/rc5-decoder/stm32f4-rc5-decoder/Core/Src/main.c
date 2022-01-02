@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "com.h"
-#include "finite_state_machine.h"
 #include "rc5_decoder.h"
 
 /* USER CODE END Includes */
@@ -52,8 +51,7 @@
 
 /* USER CODE BEGIN PV */
 
-FiniteStateMachine_t fsm;
-RC5_FSM_Data_t data;
+DecoderRC5_t decoder;
 
 /* USER CODE END PV */
 
@@ -105,38 +103,21 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  data.bits_ready = -1;
-  data.message = (const RC5_Message_t){0};
-
-  FiniteStateMachine_Init(&fsm, &data);
-
-  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START1,	NULL,		NULL, NULL});
-  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID1,		&rc5_emit1, NULL, NULL});
-  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_START0,	NULL,		NULL, NULL});
-  FiniteStateMachine_DefineState(&fsm, (StateConfig_t){RC5_STATE_MID0,		&rc5_emit0, NULL, NULL});
-
-  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START1,	RC5_STATE_MID1,		(EventConfig_t){0,	NULL, &rc5_get_short_space});
-  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,		RC5_STATE_START1,	(EventConfig_t){0,	NULL, &rc5_get_short_pulse});
-  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID1,		RC5_STATE_MID0,		(EventConfig_t){0,	NULL, &rc5_get_long_pulse});
-  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,		RC5_STATE_MID1,		(EventConfig_t){0,	NULL, &rc5_get_long_space});
-  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,		RC5_STATE_START0,	(EventConfig_t){0,	NULL, &rc5_get_short_space});
-  FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, &rc5_get_short_pulse});
-
   UART_SetSTDOUT(&huart2);
 
-  HAL_TIM_Base_Start_IT(&htim11);
+  DecoderRC5_Init(&decoder, &htim11, RECEIVER_GPIO_Port, RECEIVER_Pin);
 
   while(1) {
 
-	  if(data.bits_ready==14) {
+	  RC5_Message_t message;
+
+	  if(DecoderRC5_GetMessage(&decoder, &message)) {
 
 		  printf("Toggle: %u Address: 0x%02X Command: 0x%02X\n\r",
-				  data.message.toggle,
-				  data.message.address,
-				  data.message.command
+				  message.toggle,
+				  message.address,
+				  message.command
 		  );
-
-		  data.bits_ready = -1;
 	  }
 
     /* USER CODE END WHILE */
@@ -193,37 +174,11 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance==TIM11) {
-		if(data.bits_ready==14)
-			return;
-
-		data.bits_ready = -1;
-	}
+	DecoderRC5_PeriodElapsedCallback(&decoder, htim);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if(GPIO_Pin==RECEIVER_Pin) {
-		if(data.bits_ready==14)
-			return;
-
-		if(data.bits_ready==-1) {
-			data.bits_ready = 0;
-
-			__HAL_TIM_SET_COUNTER(&htim11, 0);
-
-			FiniteStateMachine_Start(&fsm, RC5_STATE_MID1);
-
-			return;
-		}
-
-		data.state = HAL_GPIO_ReadPin(RECEIVER_GPIO_Port, RECEIVER_Pin);
-		data.counter = __HAL_TIM_GET_COUNTER(&htim11);
-
-		__HAL_TIM_SET_COUNTER(&htim11, 0);
-
-		FiniteStateMachine_Execute(&fsm);
-		FiniteStateMachine_Update(&fsm);
-	}
+	DecoderRC5_EXTI_Callback(&decoder, GPIO_Pin);
 }
 
 /* USER CODE END 4 */

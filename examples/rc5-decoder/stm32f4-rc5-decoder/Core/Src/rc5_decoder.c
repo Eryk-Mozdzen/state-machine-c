@@ -1,64 +1,82 @@
 /*
  * rc5_decoder.c
  *
- *  Created on: Dec 30, 2021
- *      Author: ermoz
+ *  Created on: Jan 2, 2022
+ *      Author: emozdzen
  */
 
 #include "rc5_decoder.h"
-#include <stdio.h>
 
-void rc5_emit1(void *data) {
-	((RC5_FSM_Data_t *)data)->message.frame |=(1<<(13 - ((RC5_FSM_Data_t *)data)->bits_ready));
-	((RC5_FSM_Data_t *)data)->bits_ready++;
+void DecoderRC5_Init(DecoderRC5_t *decoder, TIM_HandleTypeDef *htim, GPIO_TypeDef *port, uint16_t pin) {
+	decoder->timer = htim;
+	decoder->rx_port = port;
+	decoder->rx_pin = pin;
+
+	FiniteStateMachine_Init(&decoder->fsm, decoder);
+
+	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_START1,	NULL,			NULL, NULL});
+	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_MID1,	&__rc5_emit1, 	NULL, NULL});
+	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_START0,	NULL,			NULL, NULL});
+	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_MID0,	&__rc5_emit0, 	NULL, NULL});
+	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_RESET,	&__rc5_reset, 	NULL, NULL});
+
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_MID1,		(EventConfig_t){1,	NULL, &__rc5_get_short_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_START1,	(EventConfig_t){1,	NULL, &__rc5_get_short_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_MID0,		(EventConfig_t){1,	NULL, &__rc5_get_long_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_MID1,		(EventConfig_t){1,	NULL, &__rc5_get_long_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_START0,	(EventConfig_t){1,	NULL, &__rc5_get_short_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){1,	NULL, &__rc5_get_short_pulse});
+
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_RESET,		RC5_STATE_MID1,		(EventConfig_t){0,	NULL, &__rc5_pass});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_pulse});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_space});
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_space});
+
+	FiniteStateMachine_Start(&decoder->fsm, RC5_STATE_RESET);
+
+	HAL_TIM_Base_Start_IT(decoder->timer);
 }
 
-void rc5_emit0(void *data) {
-	((RC5_FSM_Data_t *)data)->message.frame &=~(1<<(13 - ((RC5_FSM_Data_t *)data)->bits_ready));
-	((RC5_FSM_Data_t *)data)->bits_ready++;
+uint8_t DecoderRC5_GetMessage(DecoderRC5_t *decoder, RC5_Message_t *message) {
+	if(decoder->bits_ready!=14)
+		return 0;
+
+	*message = decoder->message;
+
+	FiniteStateMachine_Start(&decoder->fsm, RC5_STATE_RESET);
+
+	return 1;
 }
 
-uint8_t rc5_get_short_space(void *data) {
-	if(((RC5_FSM_Data_t *)data)->state==GPIO_PIN_RESET) {
-		uint32_t time = ((RC5_FSM_Data_t *)data)->counter*RC5_TIME_PRESCALER;
+void DecoderRC5_PeriodElapsedCallback(DecoderRC5_t *decoder, TIM_HandleTypeDef *htim) {
+	if(htim->Instance!=decoder->timer->Instance)
+		return;
 
-		if(abs(time - RC5_TIME_SHORT)<=RC5_TIME_TOLERANCE)
-			return 1;
-	}
+	if(decoder->bits_ready==14)
+		return;
 
-	return 0;
+	FiniteStateMachine_Start(&decoder->fsm, RC5_STATE_RESET);
 }
 
-uint8_t rc5_get_short_pulse(void *data) {
-	if(((RC5_FSM_Data_t *)data)->state==GPIO_PIN_SET) {
-		uint32_t time = ((RC5_FSM_Data_t *)data)->counter*RC5_TIME_PRESCALER;
+void DecoderRC5_EXTI_Callback(DecoderRC5_t *decoder, uint16_t GPIO_Pin) {
+	if(GPIO_Pin!=decoder->rx_pin)
+		return;
 
-		if(abs(time - RC5_TIME_SHORT)<=RC5_TIME_TOLERANCE)
-			return 1;
-	}
+	if(decoder->bits_ready==14)
+		return;
 
-	return 0;
-}
+	decoder->state = !HAL_GPIO_ReadPin(decoder->rx_port, decoder->rx_pin);
+	decoder->counter = __HAL_TIM_GET_COUNTER(decoder->timer);
 
-uint8_t rc5_get_long_space(void *data) {
-	if(((RC5_FSM_Data_t *)data)->state==GPIO_PIN_RESET) {
-		uint32_t time = ((RC5_FSM_Data_t *)data)->counter*RC5_TIME_PRESCALER;
+	__HAL_TIM_SET_COUNTER(decoder->timer, 0);
 
-		if(abs(time - RC5_TIME_LONG)<=RC5_TIME_TOLERANCE)
-			return 1;
-	}
-
-	return 0;
-}
-
-uint8_t rc5_get_long_pulse(void *data) {
-	if(((RC5_FSM_Data_t *)data)->state==GPIO_PIN_SET) {
-		uint32_t time = ((RC5_FSM_Data_t *)data)->counter*RC5_TIME_PRESCALER;
-
-		if(abs(time - RC5_TIME_LONG)<=RC5_TIME_TOLERANCE)
-			return 1;
-	}
-
-	return 0;
+	FiniteStateMachine_Update(&decoder->fsm);
 }
 

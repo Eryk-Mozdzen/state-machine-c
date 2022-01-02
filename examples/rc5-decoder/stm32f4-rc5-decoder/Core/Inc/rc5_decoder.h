@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "finite_state_machine.h"
 #include "stm32f4xx_hal.h"
 
 #define RC5_TIME_SHORT		889		// us
@@ -21,8 +22,9 @@ typedef enum {
 	RC5_STATE_START1,
 	RC5_STATE_MID1,
 	RC5_STATE_START0,
-	RC5_STATE_MID0
-} RC5_State_t;
+	RC5_STATE_MID0,
+	RC5_STATE_RESET
+} __RC5_State_t;
 
 typedef union {
 	struct {
@@ -35,19 +37,33 @@ typedef union {
 } RC5_Message_t;
 
 typedef struct {
-	int8_t bits_ready;
+	uint8_t bits_ready;
 	RC5_Message_t message;
 
+	uint8_t state;
 	uint32_t counter;
-	GPIO_PinState state;
-} RC5_FSM_Data_t;
 
-void rc5_emit1(void *);
-void rc5_emit0(void *);
+	uint16_t rx_pin;
+	GPIO_TypeDef *rx_port;
+	TIM_HandleTypeDef *timer;
 
-uint8_t rc5_get_short_space(void *);
-uint8_t rc5_get_short_pulse(void *);
-uint8_t rc5_get_long_space(void *);
-uint8_t rc5_get_long_pulse(void *);
+	FiniteStateMachine_t fsm;
+} DecoderRC5_t;
+
+void DecoderRC5_Init(DecoderRC5_t *, TIM_HandleTypeDef *, GPIO_TypeDef *, uint16_t);
+uint8_t DecoderRC5_GetMessage(DecoderRC5_t *, RC5_Message_t *);
+
+void DecoderRC5_EXTI_Callback(DecoderRC5_t *, uint16_t);
+void DecoderRC5_PeriodElapsedCallback(DecoderRC5_t *, TIM_HandleTypeDef *);
+
+void __rc5_emit1(void *);
+void __rc5_emit0(void *);
+void __rc5_reset(void *);
+
+uint8_t __rc5_get_short_space(void *);
+uint8_t __rc5_get_short_pulse(void *);
+uint8_t __rc5_get_long_space(void *);
+uint8_t __rc5_get_long_pulse(void *);
+uint8_t __rc5_pass(void *);
 
 #endif
