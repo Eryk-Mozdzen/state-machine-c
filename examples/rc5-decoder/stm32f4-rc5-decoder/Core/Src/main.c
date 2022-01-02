@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "com.h"
 #include "finite_state_machine.h"
 #include "rc5_decoder.h"
 
@@ -106,9 +107,6 @@ int main(void)
 
   data.bits_ready = 0;
   data.message = (const RC5_Message_t){0};
-  data.htim = &htim11;
-  data.rx_port = RECEIVER_GPIO_Port;
-  data.rx_pin = RECEIVER_Pin;
 
   FiniteStateMachine_Init(&fsm, &data);
 
@@ -124,21 +122,27 @@ int main(void)
   FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_MID0,		RC5_STATE_START0,	(EventConfig_t){0,	NULL, &rc5_get_short_space});
   FiniteStateMachine_DefineTransition(&fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){0,	NULL, &rc5_get_short_pulse});
 
+  UART_SetSTDOUT(&huart2);
+
+  //HAL_TIM_Base_Start(&htim11);
   HAL_TIM_Base_Start_IT(&htim11);
 
   while(1) {
 
-	  char buffer[64] = {0};
-	  //sprintf(buffer, "Hello world   0x%02X\n\r", data.message.frame);
-	  //HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), HAL_MAX_DELAY);
-
 	  if(data.bits_ready==14) {
 
-		  sprintf(buffer, "Toggle: %u Address: 0x%02X Command: 0x%02X\n", data.message.toggle, data.message.address, data.message.command);
-		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), HAL_MAX_DELAY);
+		  printf("Start: %u Toggle: %u Address: 0x%02X Command: 0x%02X\n\rFrame: 0x%04X\n\r",
+				  data.message.start,
+				  data.message.toggle,
+				  data.message.address,
+				  data.message.command,
+				  data.message.frame
+		  );
 
-		  data.bits_ready = 0;
+		  FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
+
 		  data.message = (const RC5_Message_t){0};
+		  data.bits_ready = 0;
 	  }
 
     /* USER CODE END WHILE */
@@ -195,22 +199,36 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance==data.htim->Instance) {
-		data.bits_ready = 0;
+	if(htim->Instance==TIM11) {
+		if(data.bits_ready==14)
+			return;
+
 		data.message = (const RC5_Message_t){0};
-		__HAL_TIM_SET_COUNTER(data.htim, 0);
+		data.bits_ready = 0;
+
+		FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
+
+		//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if(GPIO_Pin==data.rx_pin) {
+	if(GPIO_Pin==RECEIVER_Pin) {
+		if(data.bits_ready==14)
+			return;
+
+		data.state = HAL_GPIO_ReadPin(RECEIVER_GPIO_Port, RECEIVER_Pin);
+		data.counter = __HAL_TIM_GET_COUNTER(&htim11);
+
 		if(data.bits_ready==0) {
-			__HAL_TIM_SET_COUNTER(data.htim, 0);
+			__HAL_TIM_SET_COUNTER(&htim11, 0);
 
 			FiniteStateMachine_Start(&fsm, RC5_STATE_START1);
 		}
 
 		FiniteStateMachine_Update(&fsm);
+
+		__HAL_TIM_SET_COUNTER(&htim11, 0);
 	}
 }
 

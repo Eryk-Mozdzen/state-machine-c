@@ -12,9 +12,10 @@
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
 
-#define RC5_TIME_SHORT		889
-#define RC5_TIME_LONG		1778
-#define RC5_TIME_TOLERANCE	200
+#define RC5_TIME_SHORT		889		// us
+#define RC5_TIME_LONG		1778	// us
+#define RC5_TIME_TOLERANCE	200		// us
+#define RC5_TIME_PRESCALER	1		// us/LSB
 
 typedef enum {
 	RC5_STATE_START1,
@@ -37,9 +38,8 @@ typedef struct {
 	uint8_t bits_ready;
 	RC5_Message_t message;
 
-	TIM_HandleTypeDef *htim;
-	GPIO_TypeDef *rx_port;
-	uint16_t rx_pin;
+	uint32_t counter;
+	GPIO_PinState state;
 } RC5_FSM_Data_t;
 
 void rc5_emit1(void *);
