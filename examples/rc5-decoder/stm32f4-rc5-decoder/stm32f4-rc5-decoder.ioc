@@ -176,4 +176,3 @@ VP_TIM11_VS_no_output1.Mode=Output Compare1 No Output
 VP_TIM11_VS_no_output1.Signal=TIM11_VS_no_output1
 board=NUCLEO-F411RE
 boardIOC=true
-isbadioc=false

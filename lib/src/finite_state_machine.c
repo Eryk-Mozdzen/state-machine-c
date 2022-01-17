@@ -43,12 +43,15 @@ void FiniteStateMachine_Deinit(FiniteStateMachine_t *st) {
 /**
  * @brief Add state definition to state machine
  * @param st pointer to state machine
- * @param state_config state definition
+ * @param id state identifier
+ * @param enter state enter function
+ * @param execute state execute function
+ * @param exit state exit function
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, StateConfig_t state_config) {
+uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, uint32_t id, void (*enter)(void *), void (*execute)(void *), void (*exit)(void *)) {
     // check if already exist
-    if(!__FiniteStateMachine_GetStateIndex(st, state_config.id, NULL))
+    if(!__FiniteStateMachine_GetStateIndex(st, id, NULL))
         return EXIT_FAILURE;
 
     // allocate memory
@@ -58,7 +61,10 @@ uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, StateConfig_t s
         return EXIT_FAILURE;
 
     // write init values
-    st->states[st->states_num-1].config = state_config;
+    st->states[st->states_num-1].id = id;
+    st->states[st->states_num-1].enter = enter;
+    st->states[st->states_num-1].execute = execute;
+    st->states[st->states_num-1].exit = exit;
     st->states[st->states_num-1].events = NULL;
     st->states[st->states_num-1].events_num = 0;
     
@@ -70,13 +76,13 @@ uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *st, StateConfig_t s
  * @param st pointer to state machine
  * @param curr_id identifier of the state when event occurred
  * @param next_id identifier of the state that should be set after event occurred
- * @param event_config definition of event causing transition
+ * @param priority event priority
+ * @param transfer event transfer function
+ * @param get event getter function
  * @return status of operation, 0 if success, 1 if error
  */
-uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *st, uint32_t curr_id, uint32_t next_id, EventConfig_t event_config) {
+uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *st, uint32_t curr_id, uint32_t next_id, uint32_t priority, void (*transfer)(void *), uint8_t (*get)(void *)) {
 	if(curr_id==next_id)
-    	return EXIT_FAILURE;
-    if(event_config.get==NULL)
     	return EXIT_FAILURE;
 
     // get internal indexes
@@ -94,7 +100,9 @@ uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *st, uint32_t c
     	return EXIT_FAILURE;
 
     // write data
-    st->states[curr_index].events[st->states[curr_index].events_num-1].config = event_config;
+    st->states[curr_index].events[st->states[curr_index].events_num-1].priority = priority;
+    st->states[curr_index].events[st->states[curr_index].events_num-1].transfer = transfer;
+    st->states[curr_index].events[st->states[curr_index].events_num-1].get = get;
     st->states[curr_index].events[st->states[curr_index].events_num-1].next_index = next_index;
 
     return EXIT_SUCCESS;
@@ -111,8 +119,8 @@ uint8_t FiniteStateMachine_Start(FiniteStateMachine_t *st, uint32_t initial_id) 
         return EXIT_FAILURE;
 
     // call enter function for initial state
-    if(st->states[st->curr_state_index].config.enter)
-        st->states[st->curr_state_index].config.enter(st->buffer);
+    if(st->states[st->curr_state_index].enter)
+        st->states[st->curr_state_index].enter(st->buffer);
 
     return EXIT_SUCCESS;
 }
@@ -130,10 +138,15 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
     __Event_t *event = NULL;
     for(uint32_t i=0; i<st->states[st->curr_state_index].events_num; i++) {
     	// check if event occurs
-		if(st->states[st->curr_state_index].events[i].config.get(st->buffer)) {
+    	// if event getter is NULL, no event is needed to switch state
+    	uint8_t occur = 1;
+    	if(st->states[st->curr_state_index].events[i].get)
+    		occur = st->states[st->curr_state_index].events[i].get(st->buffer);
+
+		if(occur) {
 			// if more than one event compare priorities
 			if(event) {
-				if(st->states[st->curr_state_index].events[i].config.priority<event->config.priority)
+				if(st->states[st->curr_state_index].events[i].priority<event->priority)
 					continue;
 			}
 
@@ -143,16 +156,16 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
 
     if(event) {
 		// call exit function for current state if exist
-		if(st->states[st->curr_state_index].config.exit)
-			st->states[st->curr_state_index].config.exit(st->buffer);
+		if(st->states[st->curr_state_index].exit)
+			st->states[st->curr_state_index].exit(st->buffer);
 
-		// call execute function for this event if exist
-		if(event->config.execute)
-			event->config.execute(st->buffer);
+		// call transfer function for this event if exist
+		if(event->transfer)
+			event->transfer(st->buffer);
 
 		// call enter function for next state if exist
-		if(st->states[event->next_index].config.enter)
-			st->states[event->next_index].config.enter(st->buffer);
+		if(st->states[event->next_index].enter)
+			st->states[event->next_index].enter(st->buffer);
 
 		// change current state
 		st->curr_state_index = event->next_index;
@@ -171,8 +184,8 @@ uint8_t FiniteStateMachine_Execute(FiniteStateMachine_t *st) {
 		return EXIT_FAILURE;
 
 	// call execute function for current state if exist
-	if(st->states[st->curr_state_index].config.execute)
-		st->states[st->curr_state_index].config.execute(st->buffer);
+	if(st->states[st->curr_state_index].execute)
+		st->states[st->curr_state_index].execute(st->buffer);
 
 	return EXIT_SUCCESS;
 }
@@ -186,7 +199,7 @@ uint8_t FiniteStateMachine_Execute(FiniteStateMachine_t *st) {
  */
 uint8_t __FiniteStateMachine_GetStateIndex(FiniteStateMachine_t *st, uint32_t state_id, uint32_t *state_index) {
     for(uint32_t i=0; i<st->states_num; i++) {
-        if(st->states[i].config.id==state_id) {
+        if(st->states[i].id==state_id) {
             if(state_index)
                 *state_index = i;
             return EXIT_SUCCESS;

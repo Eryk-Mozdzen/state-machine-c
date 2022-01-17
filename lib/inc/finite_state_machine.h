@@ -28,8 +28,8 @@ typedef struct {
 void FiniteStateMachine_Init(FiniteStateMachine_t *, void *);
 void FiniteStateMachine_Deinit(FiniteStateMachine_t *);
 
-uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *, StateConfig_t);
-uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *, uint32_t, uint32_t, EventConfig_t);
+uint8_t FiniteStateMachine_DefineState(FiniteStateMachine_t *, uint32_t, void (*)(void *), void (*)(void *), void (*)(void *));
+uint8_t FiniteStateMachine_DefineTransition(FiniteStateMachine_t *, uint32_t, uint32_t, uint32_t, void (*)(void *), uint8_t (*)(void *));
 
 uint8_t FiniteStateMachine_Start(FiniteStateMachine_t *, uint32_t);
 uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *);

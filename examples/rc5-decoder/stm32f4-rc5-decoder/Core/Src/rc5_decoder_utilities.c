@@ -66,7 +66,3 @@ uint8_t __rc5_get_long_pulse(void *decoder) {
 	return 0;
 }
 
-uint8_t __rc5_pass(void *decoder) {
-	return 1;
-}
-

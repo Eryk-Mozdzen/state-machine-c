@@ -14,30 +14,21 @@ void DecoderRC5_Init(DecoderRC5_t *decoder, TIM_HandleTypeDef *htim, GPIO_TypeDe
 
 	FiniteStateMachine_Init(&decoder->fsm, decoder);
 
-	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_START1,	NULL,			NULL, NULL});
-	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_MID1,	&__rc5_emit1, 	NULL, NULL});
-	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_START0,	NULL,			NULL, NULL});
-	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_MID0,	&__rc5_emit0, 	NULL, NULL});
-	FiniteStateMachine_DefineState(&decoder->fsm, (StateConfig_t){RC5_STATE_RESET,	&__rc5_reset, 	NULL, NULL});
+	// state definition
+	FiniteStateMachine_DefineState(&decoder->fsm, RC5_STATE_START1,	NULL,			NULL, NULL);
+	FiniteStateMachine_DefineState(&decoder->fsm, RC5_STATE_MID1,	&__rc5_emit1, 	NULL, NULL);
+	FiniteStateMachine_DefineState(&decoder->fsm, RC5_STATE_START0,	NULL,			NULL, NULL);
+	FiniteStateMachine_DefineState(&decoder->fsm, RC5_STATE_MID0,	&__rc5_emit0, 	NULL, NULL);
+	FiniteStateMachine_DefineState(&decoder->fsm, RC5_STATE_RESET,	&__rc5_reset, 	NULL, NULL);
 
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_MID1,		(EventConfig_t){1,	NULL, &__rc5_get_short_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_START1,	(EventConfig_t){1,	NULL, &__rc5_get_short_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_MID0,		(EventConfig_t){1,	NULL, &__rc5_get_long_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_MID1,		(EventConfig_t){1,	NULL, &__rc5_get_long_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_START0,	(EventConfig_t){1,	NULL, &__rc5_get_short_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_MID0,		(EventConfig_t){1,	NULL, &__rc5_get_short_pulse});
-
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_RESET,		RC5_STATE_MID1,		(EventConfig_t){0,	NULL, &__rc5_pass});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_pulse});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_short_space});
-	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_RESET,	(EventConfig_t){0,	NULL, &__rc5_get_long_space});
+	// transition definition from RC5 graph and reset transition
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START1,	RC5_STATE_MID1,		0,	NULL, &__rc5_get_short_space);
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_START1,	0,	NULL, &__rc5_get_short_pulse);
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID1,		RC5_STATE_MID0,		0,	NULL, &__rc5_get_long_pulse);
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_MID1,		0,	NULL, &__rc5_get_long_space);
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_MID0,		RC5_STATE_START0,	0,	NULL, &__rc5_get_short_space);
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_START0,	RC5_STATE_MID0,		0,	NULL, &__rc5_get_short_pulse);
+	FiniteStateMachine_DefineTransition(&decoder->fsm, RC5_STATE_RESET,		RC5_STATE_MID1,		0,	NULL, NULL);
 
 	FiniteStateMachine_Start(&decoder->fsm, RC5_STATE_RESET);
 
