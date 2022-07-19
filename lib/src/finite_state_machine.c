@@ -140,8 +140,9 @@ uint8_t FiniteStateMachine_Update(FiniteStateMachine_t *st) {
     	// check if event occurs
     	// if event getter is NULL, no event is needed to switch state
     	uint8_t occur = 1;
-    	if(st->states[st->curr_state_index].events[i].get)
+    	if(st->states[st->curr_state_index].events[i].get) {
     		occur = st->states[st->curr_state_index].events[i].get(st->buffer);
+		}
 
 		if(occur) {
 			// if more than one event compare priorities
