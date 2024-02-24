@@ -1,19 +1,21 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(Light)
+project(example-light)
 
-# compiler settings
-add_compile_options(-Wall -pedantic)
+add_executable(${PROJECT_NAME}
+    "main.c"
+    "../../src/fsm.c"
+)
 
-# code source
-file(GLOB SOURCE "src/*.c" "../../lib/src/*.c")
-add_executable(${PROJECT_NAME} ${SOURCE})
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "../../include"
+)
 
-target_include_directories(${PROJECT_NAME} PUBLIC inc)
-target_include_directories(${PROJECT_NAME} PUBLIC ../../lib/inc)
-
-# linking
-target_link_libraries(${PROJECT_NAME} m)
+target_compile_options(${PROJECT_NAME} PUBLIC
+    -Wall
+    -Wextra
+    -Wpedantic
+)
 
 # mkdir build
 # cd build
